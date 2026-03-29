@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1a2e">
+<title>WürfelToGo</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f0f1a;--card:#1a1a2e;--accent:#e94560;--text:#eee;--text2:#888;--green:#4ecca3;--gold:#ffd369;--brd:#2a2a4a}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
+header{background:var(--card);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--accent);position:sticky;top:0;z-index:99}
+header h1{font-size:18px;font-weight:800;color:var(--accent)}
+header button{background:var(--brd);border:none;color:var(--text);width:34px;height:34px;border-radius:8px;font-size:16px;cursor:pointer}
+.view{display:none}.view.on{display:flex;flex-direction:column}
+.v-setup{align-items:center;gap:20px;padding:30px 20px;min-height:80vh;justify-content:center}
+.v-setup .logo{font-size:56px}
+.v-setup h2{font-size:24px;font-weight:800}
+.v-setup p{color:var(--text2);font-size:13px;text-align:center}
+.pcnt{display:flex;align-items:center;gap:18px}
+.pcnt button{background:var(--card);border:2px solid var(--brd);color:var(--text);width:44px;height:44px;border-radius:12px;font-size:22px;font-weight:700;cursor:pointer}
+.pcnt span{font-size:44px;font-weight:800;color:var(--accent);min-width:50px;text-align:center}
+.names{width:100%;max-width:300px;display:flex;flex-direction:column;gap:8px}
+.names input{background:var(--card);border:1px solid var(--brd);color:var(--text);padding:10px 14px;border-radius:10px;font-size:14px;outline:none}
+.names input:focus{border-color:var(--accent)}
+.names input::placeholder{color:#555}
+.btn{background:var(--accent);border:none;color:#fff;padding:14px 40px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;display:inline-block}
+.v-game{display:none}.v-game.on{display:block}
+.score-wrap{overflow-x:auto;padding:8px 6px;-webkit-overflow-scrolling:touch}
+.score-table{width:100%;border-collapse:collapse;min-width:280px}
+.score-table th,.score-table td{border:1px solid var(--brd);padding:4px 3px;text-align:center;font-size:12px;vertical-align:middle}
+.score-table th{position:sticky;top:0;z-index:2}
+.score-table thead th{background:var(--card);font-weight:700;font-size:11px;padding:8px 3px}
+.score-table thead th.player-hdr{color:var(--accent);min-width:52px}
+.score-table thead th.lbl-hdr{text-align:left;padding-left:6px;min-width:90px;color:var(--text2);font-weight:600}
+.score-table .sec-hdr td{background:rgba(233,69,96,.12);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);padding:6px 6px;text-align:left}
+.score-table .lbl-cell{text-align:left;padding-left:6px;font-size:11px;white-space:nowrap;background:var(--card)}
+.score-table .lbl-cell .hint{color:var(--text2);font-size:9px;margin-left:3px}
+.score-table .calc-row td{background:rgba(78,204,163,.06);font-weight:700;font-size:12px;color:var(--green)}
+.score-table .calc-row .lbl-cell{color:var(--text);font-weight:600}
+.score-table .bonus-row td{color:var(--gold)}
+.score-table .bonus-row .lbl-cell{color:var(--text)}
+.score-table input[type=number]{width:100%;max-width:52px;background:var(--bg);border:1px solid var(--brd);color:var(--text);text-align:center;padding:4px 2px;border-radius:5px;font-size:14px;font-weight:600;outline:none;-moz-appearance:textfield}
+.score-table input[type=number]::-webkit-inner-spin-button,
+.score-table input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+.score-table input[type=number]:focus{border-color:var(--accent)}
+.chk-wrap{display:flex;justify-content:center;align-items:center}
+.chk-wrap input[type=checkbox]{display:none}
+.chk-wrap label{width:36px;height:28px;border-radius:6px;border:2px solid var(--brd);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;color:transparent;user-select:none}
+.chk-wrap input[type=checkbox]:checked + label{border-color:var(--green);background:rgba(78,204,163,.15);color:var(--green)}
+.bonus-bars{display:flex;gap:6px;padding:8px 6px;flex-wrap:wrap}
+.bonus-bar{flex:1;min-width:100px;padding:6px 10px;background:var(--card);border-radius:8px;border:1px solid var(--brd)}
+.bonus-bar .nm{font-size:10px;color:var(--text2);font-weight:600;margin-bottom:2px}
+.bonus-bar .bar{height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bonus-bar .fill{height:100%;border-radius:3px;background:var(--accent);transition:width .3s}
+.bonus-bar .fill.ok{background:var(--gold)}
+.bonus-bar .info{font-size:9px;color:var(--text2);margin-top:2px}
+.v-end{align-items:center;gap:16px;padding:24px 16px}
+.v-end h2{font-size:24px}
+.podium{width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px}
+.podium .entry{display:flex;align-items:center;background:var(--card);border-radius:12px;padding:12px 14px;border:1px solid var(--brd);gap:12px}
+.podium .entry:first-child{border-color:var(--gold);background:rgba(255,211,105,.06)}
+.podium .rank{font-size:22px;width:36px;text-align:center}
+.podium .name{flex:1;font-size:15px;font-weight:600}
+.podium .pts{font-size:18px;font-weight:800;color:var(--accent)}
+.v-hist{padding:14px}
+.v-hist h2{margin-bottom:12px;font-size:20px}
+.hentry{background:var(--card);border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--brd)}
+.hentry .dt{font-size:10px;color:var(--text2);margin-bottom:4px}
+.hentry .pl{font-size:13px}.hentry .pl span{margin-right:10px}
+.hentry .pl .w{color:var(--gold);font-weight:700}
+.empty{color:var(--text2);text-align:center;padding:40px;font-size:13px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.overlay.on{display:flex}
+.modal{background:var(--card);border-radius:16px;padding:20px;max-width:300px;width:100%;text-align:center;border:1px solid var(--brd)}
+.modal h3{margin-bottom:10px;font-size:16px}
+.modal p{color:var(--text2);font-size:13px;margin-bottom:16px}
+.modal .btns{display:flex;gap:8px}
+.modal .btns button{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+.modal .btns .no{background:var(--brd);color:var(--text)}
+.modal .btns .yes{background:var(--accent);color:#fff}
+.rules-box{background:var(--card);border-radius:16px;padding:20px;max-width:360px;width:100%;border:1px solid var(--brd);max-height:85vh;overflow-y:auto;text-align:left}
+.rules-box h3{font-size:17px;margin-bottom:12px;color:var(--accent);text-align:center}
+.rules-box h4{font-size:12px;color:var(--accent);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.5px}
+.rules-box p,.rules-box li{font-size:12px;color:var(--text);line-height:1.5}
+.rules-box ul{padding-left:16px;margin:0}
+.rules-box li{margin-bottom:3px}
+.rules-box .val{color:var(--gold);font-weight:700}
+.rules-box .close-btn{margin-top:14px;width:100%;padding:10px;border-radius:10px;background:var(--accent);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+<h1>&#127922; WürfelToGo</h1>
+<div style="display:flex;gap:8px">
+<button id="btnRules" style="font-weight:800;font-size:18px">?</button>
+<button id="btnHist">&#128203;</button>
+<button id="btnReset">&#128260;</button>
+</div>
+</header>
+
+<div class="view v-setup on" id="vSetup">
+<div class="logo">&#127922;</div>
+<h2>Neues Spiel</h2>
+<p>Wie viele Spieler sind dabei?</p>
+<div class="pcnt">
+<button id="bMin">&minus;</button>
+<span id="numP">2</span>
+<button id="bPlus">+</button>
+</div>
+<div class="names" id="nameBox"></div>
+<button class="btn" id="bStart">Los geht's!</button>
+</div>
+
+<div class="view v-game" id="vGame">
+<div class="bonus-bars" id="bonusBars"></div>
+<div class="score-wrap"><table class="score-table" id="scoreTable"></table></div>
+<div style="padding:10px 6px">
+<button class="btn" id="bFinish" style="width:100%;font-size:15px;padding:12px">Spiel beenden &#127937;</button>
+</div>
+</div>
+
+<div class="view v-end" id="vEnd">
+<h2>&#127942; Endstand</h2>
+<div class="podium" id="podium"></div>
+<button class="btn" id="bAgain" style="margin-top:12px">Nochmal spielen!</button>
+</div>
+
+<div class="view v-hist" id="vHist">
+<h2>Spielverlauf</h2>
+<div id="histList"></div>
+<button class="btn" style="margin-top:16px;width:100%" id="bBack">Zurück</button>
+</div>
+
+<!-- Reset confirmation modal -->
+<div class="overlay" id="modalBg">
+<div class="modal">
+<h3>Neues Spiel starten?</h3>
+<p>Das laufende Spiel wird gespeichert.</p>
+<div class="btns">
+<button class="no" id="mNo">Abbrechen</button>
+<button class="yes" id="mYes">Neues Spiel</button>
+</div>
+</div>
+</div>
+
+<!-- Rules overlay -->
+<div class="overlay" id="rulesBg">
+<div class="rules-box">
+<h3>&#128214; Spielregeln</h3>
+<h4>&#127922; Spielablauf</h4>
+<ul>
+<li>Pro Runde <span class="val">3x w&uuml;rfeln</span>, beliebige W&uuml;rfel zur Seite legen</li>
+<li>Nach dem letzten Wurf ein Feld ausw&auml;hlen und Punkte eintragen</li>
+<li>Jedes Feld kann nur <span class="val">1x</span> belegt werden</li>
+</ul>
+<h4>&#11014;&#65039; Oberer Teil (Einser bis Sechser)</h4>
+<ul>
+<li>Nur die entsprechenden Augenzahlen z&auml;hlen</li>
+<li>Ab <span class="val">&ge;63 Punkte</span> gibt es <span class="val">+25 Bonus</span></li>
+</ul>
+<h4>&#11015;&#65039; Unterer Teil</h4>
+<ul>
+<li><strong>Dreierpasch</strong> &ndash; 3+ gleiche: <span class="val">Augensumme aller 5 W&uuml;rfel</span></li>
+<li><strong>Viererpasch</strong> &ndash; 4+ gleiche: <span class="val">Augensumme aller 5 W&uuml;rfel</span></li>
+<li><strong>Full House</strong> &ndash; 3er + 2er Paar: <span class="val">Augensumme</span></li>
+<li><strong>Kl. Stra&szlig;e</strong> &ndash; 4 aufeinander: <span class="val">15 Punkte &#10003;</span></li>
+<li><strong>Gr. Stra&szlig;e</strong> &ndash; 5 aufeinander: <span class="val">20 Punkte &#10003;</span></li>
+<li><strong>Kniffel</strong> &ndash; 5 gleiche: <span class="val">50 Punkte &#10003;</span></li>
+<li><strong>Chance</strong> &ndash; beliebig: <span class="val">Augensumme</span></li>
+</ul>
+<h4>&#127942; Spielende</h4>
+<ul>
+<li>Endstand erst &uuml;ber <span class="val">&bdquo;Spiel beenden&ldquo;</span> sichtbar</li>
+<li>H&ouml;chste Gesamtpunktzahl gewinnt!</li>
+</ul>
+<button class="close-btn" id="closeRules">Verstanden!</button>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var UPPER = [
+  {id:"a1",ic:"\u2680",name:"Einser",hint:"nur 1er",type:"num"},
+  {id:"a2",ic:"\u2681",name:"Zweier",hint:"nur 2er",type:"num"},
+  {id:"a3",ic:"\u2682",name:"Dreier",hint:"nur 3er",type:"num"},
+  {id:"a4",ic:"\u2683",name:"Vierer",hint:"nur 4er",type:"num"},
+  {id:"a5",ic:"\u2684",name:"F\u00fcnfer",hint:"nur 5er",type:"num"},
+  {id:"a6",ic:"\u2685",name:"Sechser",hint:"nur 6er",type:"num"}
+];
+
+var LOWER = [
+  {id:"b1",ic:"\uD83C\uDFAF",name:"Dreierpasch",hint:"",type:"num"},
+  {id:"b2",ic:"\uD83C\uDFAF",name:"Viererpasch",hint:"",type:"num"},
+  {id:"b3",ic:"\uD83C\uDFE0",name:"Full House",hint:"",type:"num"},
+  {id:"b4",ic:"\u27A1\uFE0F",name:"Kl. Straße",hint:"15 Pkt",type:"check",pts:15},
+  {id:"b5",ic:"\u27A1\uFE0F",name:"Gr. Straße",hint:"20 Pkt",type:"check",pts:20},
+  {id:"b6",ic:"\uD83D\uDCA5",name:"Kniffel!",hint:"50 Pkt",type:"check",pts:50},
+  {id:"b7",ic:"\uD83C\uDFB2",name:"Chance",hint:"",type:"num"}
+];
+
+var ALL = UPPER.concat(LOWER);
+var numP = 2;
+var players = [];
+var data = {};
+var running = false;
+var prevView = "vSetup";
+
+function $(id){ return document.getElementById(id); }
+function show(id){
+  ["vSetup","vGame","vEnd","vHist"].forEach(function(v){
+    $(v).classList.toggle("on", v === id);
+  });
+  if(id !== "vHist") prevView = id;
+}
+
+/* ── Setup ── */
+function renderNames(){
+  var box = $("nameBox"); box.innerHTML = "";
+  for(var i = 0; i < numP; i++){
+    var inp = document.createElement("input");
+    inp.type = "text"; inp.placeholder = "Spieler " + (i+1); inp.maxLength = 12;
+    if(players[i]) inp.value = players[i];
+    box.appendChild(inp);
+  }
+}
+$("bMin").onclick = function(){ if(numP > 1){ numP--; $("numP").textContent = numP; renderNames(); }};
+$("bPlus").onclick = function(){ if(numP < 6){ numP++; $("numP").textContent = numP; renderNames(); }};
+renderNames();
+
+$("bStart").onclick = function(){
+  players = [];
+  var inputs = document.querySelectorAll("#nameBox input");
+  for(var i = 0; i < inputs.length; i++) players.push(inputs[i].value.trim() || ("Spieler " + (i+1)));
+  data = {};
+  for(var j = 0; j < players.length; j++) data[j] = {};
+  running = true;
+  buildTable(); buildBonusBars(); refresh();
+  show("vGame");
+};
+
+/* ── Score Table ── */
+function buildTable(){
+  var tbl = $("scoreTable"); tbl.innerHTML = "";
+  var thead = document.createElement("thead");
+  var hr = document.createElement("tr");
+  var th0 = document.createElement("th"); th0.className = "lbl-hdr"; th0.textContent = "Kategorie"; hr.appendChild(th0);
+  for(var p = 0; p < players.length; p++){
+    var th = document.createElement("th"); th.className = "player-hdr"; th.textContent = players[p]; hr.appendChild(th);
+  }
+  thead.appendChild(hr); tbl.appendChild(thead);
+
+  var tbody = document.createElement("tbody");
+  addSectionHeader(tbody, "Oberer Teil");
+  UPPER.forEach(function(r){ addInputRow(tbody, r); });
+  addCalcRow(tbody, "calcSumUp", "\uD83D\uDCCA Zwischensumme", false);
+  addCalcRow(tbody, "calcBonus", "\u2B50 Bonus (\u226563 \u2192 +25)", true);
+  addCalcRow(tbody, "calcTotUp", "Gesamt oben", false);
+
+  addSectionHeader(tbody, "Unterer Teil");
+  LOWER.forEach(function(r){ addInputRow(tbody, r); });
+  addCalcRow(tbody, "calcSumLo", "\uD83D\uDCCA Gesamt unten", false);
+  tbl.appendChild(tbody);
+}
+
+function addSectionHeader(tb, text){
+  var tr = document.createElement("tr"); tr.className = "sec-hdr";
+  var td = document.createElement("td"); td.colSpan = players.length + 1; td.textContent = text;
+  tr.appendChild(td); tb.appendChild(tr);
+}
+
+function addInputRow(tb, r){
+  var tr = document.createElement("tr");
+  var tdL = document.createElement("td"); tdL.className = "lbl-cell";
+  tdL.innerHTML = r.ic + " " + r.name + '<span class="hint">' + r.hint + '</span>';
+  tr.appendChild(tdL);
+  for(var p = 0; p < players.length; p++){
+    var td = document.createElement("td");
+    if(r.type === "check"){
+      var uid = "chk_" + r.id + "_" + p;
+      td.innerHTML = '<div class="chk-wrap"><input type="checkbox" id="'+uid+'" data-rid="'+r.id+'" data-p="'+p+'" data-pts="'+r.pts+'"><label for="'+uid+'">\u2713</label></div>';
+    } else {
+      var mx = (r.id.charAt(0)==="a") ? 30 : 50;
+      td.innerHTML = '<input type="number" inputmode="numeric" min="0" max="'+mx+'" data-rid="'+r.id+'" data-p="'+p+'">';
+    }
+    tr.appendChild(td);
+  }
+  tb.appendChild(tr);
+}
+
+function addCalcRow(tb, idPfx, label, isBonus){
+  var tr = document.createElement("tr"); tr.className = "calc-row" + (isBonus ? " bonus-row" : "");
+  var tdL = document.createElement("td"); tdL.className = "lbl-cell"; tdL.textContent = label; tr.appendChild(tdL);
+  for(var p = 0; p < players.length; p++){
+    var td = document.createElement("td"); td.id = idPfx + "_" + p; td.textContent = "0"; tr.appendChild(td);
+  }
+  tb.appendChild(tr);
+}
+
+/* ── Bonus Bars ── */
+function buildBonusBars(){
+  var w = $("bonusBars"); w.innerHTML = "";
+  for(var p = 0; p < players.length; p++){
+    var d = document.createElement("div"); d.className = "bonus-bar";
+    d.innerHTML = '<div class="nm">' + players[p] + '</div><div class="bar"><div class="fill" id="bf_'+p+'" style="width:0%"></div></div><div class="info" id="bi_'+p+'">0 / 63</div>';
+    w.appendChild(d);
+  }
+}
+
+/* ── Event delegation ── */
+$("scoreTable").addEventListener("input", function(e){
+  var el = e.target;
+  if(el.type !== "number") return;
+  var rid = el.dataset.rid, pi = parseInt(el.dataset.p), v = parseInt(el.value);
+  if(isNaN(v) || el.value === ""){ delete data[pi][rid]; }
+  else { if(v<0) v=0; var mx=parseInt(el.max); if(v>mx) v=mx; data[pi][rid]=v; }
+  refresh();
+});
+$("scoreTable").addEventListener("change", function(e){
+  var el = e.target;
+  if(el.type !== "checkbox") return;
+  var rid = el.dataset.rid, pi = parseInt(el.dataset.p), pts = parseInt(el.dataset.pts);
+  data[pi][rid] = el.checked ? pts : 0;
+  refresh();
+});
+
+/* ── Calculations ── */
+function calc(pi){
+  var s = data[pi] || {}, upper = 0, lower = 0;
+  UPPER.forEach(function(r){ upper += (s[r.id] || 0); });
+  var bonus = upper >= 63 ? 25 : 0;
+  LOWER.forEach(function(r){ lower += (s[r.id] || 0); });
+  return { upper:upper, bonus:bonus, totUp:upper+bonus, lower:lower, grand:upper+bonus+lower };
+}
+
+/* ── Refresh ── */
+function refresh(){
+  for(var p = 0; p < players.length; p++){
+    var cc = calc(p), ap = data[p] || {};
+
+    // Number inputs (don't overwrite focused)
+    var ni = document.querySelectorAll('input[type=number][data-p="'+p+'"]');
+    for(var j=0;j<ni.length;j++){
+      var rid = ni[j].dataset.rid;
+      if(document.activeElement !== ni[j]) ni[j].value = (ap[rid] !== undefined) ? ap[rid] : "";
+    }
+    // Checkboxes
+    var ci = document.querySelectorAll('input[type=checkbox][data-p="'+p+'"]');
+    for(var k=0;k<ci.length;k++) ci[k].checked = !!(ap[ci[k].dataset.rid]);
+
+    // Calc rows
+    var el;
+    el=$("calcSumUp_"+p); if(el) el.textContent=cc.upper;
+    el=$("calcBonus_"+p); if(el) el.textContent=cc.bonus?"+25":"0";
+    el=$("calcTotUp_"+p); if(el) el.textContent=cc.totUp;
+    el=$("calcSumLo_"+p); if(el) el.textContent=cc.lower;
+
+    // Bonus bar
+    var pct = Math.min(100, Math.round(cc.upper/63*100));
+    var bf=$("bf_"+p); if(bf){ bf.style.width=pct+"%"; bf.className="fill"+(cc.upper>=63?" ok":""); }
+    var bi=$("bi_"+p); if(bi) bi.textContent=cc.upper+" / 63"+(cc.upper>=63?" \u2713":"");
+  }
+}
+
+/* ── Finish ── */
+$("bFinish").onclick = function(){
+  if(!running) return;
+  running = false;
+  var results = [];
+  for(var i=0;i<players.length;i++) results.push({name:players[i],score:calc(i).grand});
+  results.sort(function(a,b){ return b.score-a.score; });
+  var ranks=["\uD83E\uDD47","\uD83E\uDD48","\uD83E\uDD49","4.","5.","6."];
+  var pod=$("podium"); pod.innerHTML="";
+  for(var i=0;i<results.length;i++){
+    var e=document.createElement("div"); e.className="entry";
+    e.innerHTML='<div class="rank">'+ranks[i]+'</div><div class="name">'+results[i].name+'</div><div class="pts">'+results[i].score+'</div>';
+    pod.appendChild(e);
+  }
+  saveHistory(results);
+  show("vEnd");
+};
+
+/* ── History ── */
+function saveHistory(results){
+  var h=JSON.parse(localStorage.getItem("wuerfel_hist")||"[]");
+  h.unshift({date:new Date().toLocaleString("de"),results:results});
+  if(h.length>30) h=h.slice(0,30);
+  localStorage.setItem("wuerfel_hist",JSON.stringify(h));
+}
+function renderHistory(){
+  var h=JSON.parse(localStorage.getItem("wuerfel_hist")||"[]");
+  var list=$("histList"); list.innerHTML="";
+  if(!h.length){ list.innerHTML='<div class="empty">Noch keine Spiele gespeichert.</div>'; return; }
+  h.forEach(function(g){
+    var d=document.createElement("div"); d.className="hentry";
+    var pl=g.results.map(function(r,idx){ return '<span class="'+(idx===0?"w":"")+'">' +r.name+": "+r.score+"</span>"; }).join("");
+    d.innerHTML='<div class="dt">'+g.date+'</div><div class="pl">'+pl+'</div>';
+    list.appendChild(d);
+  });
+}
+
+/* ── Navigation ── */
+$("btnHist").onclick = function(){ renderHistory(); show("vHist"); };
+$("bBack").onclick = function(){ show(running ? "vGame" : "vSetup"); };
+$("btnReset").onclick = function(){
+  if(running){ $("modalBg").classList.add("on"); }
+  else { show("vSetup"); }
+};
+$("mNo").onclick = function(){ $("modalBg").classList.remove("on"); };
+$("mYes").onclick = function(){ $("modalBg").classList.remove("on"); running=false; show("vSetup"); };
+$("bAgain").onclick = function(){ show("vSetup"); };
+
+/* ── Rules overlay ── */
+$("btnRules").onclick = function(){ $("rulesBg").classList.add("on"); };
+$("closeRules").onclick = function(){ $("rulesBg").classList.remove("on"); };
+$("rulesBg").onclick = function(e){ if(e.target === $("rulesBg")) $("rulesBg").classList.remove("on"); };
+
+})();
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+</script>
+</body>
+</html>
